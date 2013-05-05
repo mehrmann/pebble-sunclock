@@ -24,6 +24,9 @@ Layer graphics_sun_layer;
 RotBmpPairContainer bitmap_container;
 RotBmpPairContainer watchface_container;
 
+GFont font_roboto_18;
+GFont font_roboto_30;
+
 GPathInfo sun_path_info = {
   5,
   (GPoint []) {
@@ -163,6 +166,9 @@ void handle_init(AppContextRef ctx) {
 
   resource_init_current_app(&APP_RESOURCES);
 
+  font_roboto_18 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_18));
+  font_roboto_30 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_30));
+
   layer_init(&graphics_sun_layer, window.layer.frame);
   graphics_sun_layer.update_proc = &graphics_sun_layer_update_callback;
   layer_add_child(&window.layer, &graphics_sun_layer);
@@ -176,7 +182,7 @@ void handle_init(AppContextRef ctx) {
   text_layer_set_text_color(&text_time_layer, GColorBlack);
   text_layer_set_background_color(&text_time_layer, GColorClear);
   layer_set_frame(&text_time_layer.layer, GRect(0, 35, 144, 30));
-  text_layer_set_font(&text_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_30)));
+  text_layer_set_font(&text_time_layer, font_roboto_30);
   layer_add_child(&window.layer, &text_time_layer.layer);
 
   rotbmp_pair_init_container(RESOURCE_ID_IMAGE_HOUR_WHITE, RESOURCE_ID_IMAGE_HOUR_BLACK, &bitmap_container);
@@ -192,14 +198,14 @@ void handle_init(AppContextRef ctx) {
   text_layer_set_text_color(&text_sunrise_layer, GColorWhite);
   text_layer_set_background_color(&text_sunrise_layer, GColorClear);
   layer_set_frame(&text_sunrise_layer.layer, GRect(0, 150, 144, 30));
-  text_layer_set_font(&text_sunrise_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_18)));
+  text_layer_set_font(&text_sunrise_layer, font_roboto_18);
   layer_add_child(&window.layer, &text_sunrise_layer.layer);
 
   text_layer_init(&text_sunset_layer, window.layer.frame);
   text_layer_set_text_color(&text_sunset_layer, GColorWhite);
   text_layer_set_background_color(&text_sunset_layer, GColorClear);
   layer_set_frame(&text_sunset_layer.layer, GRect(0, 150, 144, 30));
-  text_layer_set_font(&text_sunset_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_18)));
+  text_layer_set_font(&text_sunset_layer, font_roboto_18);
   layer_add_child(&window.layer, &text_sunset_layer.layer); 
 
   updateDayAndNightInfo();
@@ -210,6 +216,9 @@ void handle_deinit(AppContextRef ctx) {
 
   rotbmp_pair_deinit_container(&watchface_container);
   rotbmp_pair_deinit_container(&bitmap_container);
+
+  fonts_unload_custom_font(font_roboto_18);
+  fonts_unload_custom_font(font_roboto_30);
 }
 
 void pbl_main(void *params) {
