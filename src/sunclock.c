@@ -21,7 +21,7 @@ TextLayer text_sunset_layer;
 
 Layer graphics_sun_layer;
 
-RotBmpPairContainer bitmap_container;
+RotBmpPairContainer bitmap_hour_container;
 RotBmpPairContainer watchface_container;
 
 GPathInfo sun_path_info = {
@@ -36,8 +36,12 @@ GPathInfo sun_path_info = {
 };
 
 GPath sun_path;
-
 short currentData = -1;
+char moonphase_text [] = "a";  
+GRect moonRect = {{(144/2)-16,100},{32,32}};
+GFont fontSmall;
+GFont fontBig;
+GFont fontMoonPhases;
 
 void graphics_sun_layer_update_callback(Layer *me, GContext* ctx) 
 {
@@ -48,6 +52,16 @@ void graphics_sun_layer_update_callback(Layer *me, GContext* ctx)
 
   graphics_context_set_fill_color(ctx, GColorBlack);
   gpath_draw_filled(ctx, &sun_path);  
+
+  graphics_context_set_text_color(ctx, GColorWhite);
+
+  graphics_text_draw(ctx,
+         moonphase_text,
+         fontMoonPhases,
+         moonRect, //GRect(0, 100, 144, 50),
+         GTextOverflowModeWordWrap,
+         GTextAlignmentCenter,
+         NULL);
 }
 
 float get24HourAngle(int hours, int minutes) 
@@ -62,16 +76,38 @@ void adjustTimezone(float* time)
   if (*time < 0) *time += 24;
 }
 
+float gregorian_calendar_to_jd(int y, int m, int d)
+{
+    y+=8000;
+    if(m<3) { y--; m+=12; }
+    return ((y-9865)*365) +(y/4) -(y/100) +(y/400) - 95
+    +(m*153+3)/5-92
+    +d-1
+    ;
+}
+
+float moon_phase(int y, int m, int d)
+{
+    static const int known_full_moon = 51550; //2000 1 6
+    int julianDay = gregorian_calendar_to_jd(y,m,d);
+    float phase = (julianDay - known_full_moon)/29.53f;
+    phase = phase - (int)(phase);
+    return phase;
+}
+
 void updateDayAndNightInfo()
 {
   static char sunrise_text[] = "00:00";
   static char sunset_text[] = "00:00";
+  
 
   PblTm pblTime;
   get_time(&pblTime);
 
   if(currentData != pblTime.tm_hour) 
   {
+    moonphase_text[0] = 'a' + 26.0f * moon_phase(1900 + pblTime.tm_year,  1 + pblTime.tm_mon, pblTime.tm_mday);
+  
     char *time_format;
 
     if (clock_is_24h_style()) 
@@ -146,9 +182,9 @@ void handle_minute_tick(AppContextRef ctx, PebbleTickEvent *t)
   text_layer_set_text(&text_time_layer, time_text);
   text_layer_set_text_alignment(&text_time_layer, GTextAlignmentCenter);
 
-  rotbmp_pair_layer_set_angle(&bitmap_container.layer, TRIG_MAX_ANGLE * get24HourAngle(t->tick_time->tm_hour, t->tick_time->tm_min));
-  bitmap_container.layer.layer.frame.origin.x = (144/2) - (bitmap_container.layer.layer.frame.size.w/2);
-  bitmap_container.layer.layer.frame.origin.y = (168/2) - (bitmap_container.layer.layer.frame.size.h/2);
+  rotbmp_pair_layer_set_angle(&bitmap_hour_container.layer, TRIG_MAX_ANGLE * get24HourAngle(t->tick_time->tm_hour, t->tick_time->tm_min));
+  bitmap_hour_container.layer.layer.frame.origin.x = (144/2) - (bitmap_hour_container.layer.layer.frame.size.w/2);
+  bitmap_hour_container.layer.layer.frame.origin.y = (168/2) - (bitmap_hour_container.layer.layer.frame.size.h/2);
 
   updateDayAndNightInfo();
 }
@@ -163,6 +199,10 @@ void handle_init(AppContextRef ctx) {
 
   resource_init_current_app(&APP_RESOURCES);
 
+  fontBig = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SUNCLOCK_30));
+  fontSmall = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SUNCLOCK_16));
+  fontMoonPhases = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_MOON_PHASES_30));
+
   layer_init(&graphics_sun_layer, window.layer.frame);
   graphics_sun_layer.update_proc = &graphics_sun_layer_update_callback;
   layer_add_child(&window.layer, &graphics_sun_layer);
@@ -172,34 +212,34 @@ void handle_init(AppContextRef ctx) {
   watchface_container.layer.layer.frame.origin.x = (144/2) - (watchface_container.layer.layer.frame.size.w/2);
   watchface_container.layer.layer.frame.origin.y = (168/2) - (watchface_container.layer.layer.frame.size.h/2);
 
+  rotbmp_pair_init_container(RESOURCE_ID_IMAGE_HOUR_WHITE, RESOURCE_ID_IMAGE_HOUR_BLACK, &bitmap_hour_container);
+  rotbmp_pair_layer_set_src_ic(&bitmap_hour_container.layer, GPoint(6,56));
+  layer_add_child(&window.layer, &bitmap_hour_container.layer.layer);
+  PblTm t;
+  get_time(&t);
+  rotbmp_pair_layer_set_angle(&bitmap_hour_container.layer, TRIG_MAX_ANGLE * get24HourAngle(t.tm_hour, t.tm_min));
+  bitmap_hour_container.layer.layer.frame.origin.x = (144/2) - (bitmap_hour_container.layer.layer.frame.size.w/2);
+  bitmap_hour_container.layer.layer.frame.origin.y = (168/2) - (bitmap_hour_container.layer.layer.frame.size.h/2);
+
   text_layer_init(&text_time_layer, window.layer.frame);
   text_layer_set_text_color(&text_time_layer, GColorBlack);
   text_layer_set_background_color(&text_time_layer, GColorClear);
   layer_set_frame(&text_time_layer.layer, GRect(0, 35, 144, 30));
-  text_layer_set_font(&text_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_30)));
+  text_layer_set_font(&text_time_layer, fontBig);
   layer_add_child(&window.layer, &text_time_layer.layer);
-
-  rotbmp_pair_init_container(RESOURCE_ID_IMAGE_HOUR_WHITE, RESOURCE_ID_IMAGE_HOUR_BLACK, &bitmap_container);
-  rotbmp_pair_layer_set_src_ic(&bitmap_container.layer, GPoint(9,56));
-  layer_add_child(&window.layer, &bitmap_container.layer.layer);
-  PblTm t;
-  get_time(&t);
-  rotbmp_pair_layer_set_angle(&bitmap_container.layer, TRIG_MAX_ANGLE * get24HourAngle(t.tm_hour, t.tm_min));
-  bitmap_container.layer.layer.frame.origin.x = (144/2) - (bitmap_container.layer.layer.frame.size.w/2);
-  bitmap_container.layer.layer.frame.origin.y = (168/2) - (bitmap_container.layer.layer.frame.size.h/2);
 
   text_layer_init(&text_sunrise_layer, window.layer.frame);
   text_layer_set_text_color(&text_sunrise_layer, GColorWhite);
   text_layer_set_background_color(&text_sunrise_layer, GColorClear);
-  layer_set_frame(&text_sunrise_layer.layer, GRect(0, 150, 144, 30));
-  text_layer_set_font(&text_sunrise_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_18)));
+  layer_set_frame(&text_sunrise_layer.layer, GRect(0, 150, 144, 18));
+  text_layer_set_font(&text_sunrise_layer, fontSmall);
   layer_add_child(&window.layer, &text_sunrise_layer.layer);
 
   text_layer_init(&text_sunset_layer, window.layer.frame);
   text_layer_set_text_color(&text_sunset_layer, GColorWhite);
   text_layer_set_background_color(&text_sunset_layer, GColorClear);
-  layer_set_frame(&text_sunset_layer.layer, GRect(0, 150, 144, 30));
-  text_layer_set_font(&text_sunset_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_18)));
+  layer_set_frame(&text_sunset_layer.layer, GRect(0, 150, 144, 18));
+  text_layer_set_font(&text_sunset_layer, fontSmall);
   layer_add_child(&window.layer, &text_sunset_layer.layer); 
 
   updateDayAndNightInfo();
@@ -209,7 +249,11 @@ void handle_deinit(AppContextRef ctx) {
   (void)ctx;
 
   rotbmp_pair_deinit_container(&watchface_container);
-  rotbmp_pair_deinit_container(&bitmap_container);
+  rotbmp_pair_deinit_container(&bitmap_hour_container);
+
+  fonts_unload_custom_font(fontSmall);
+  fonts_unload_custom_font(fontBig);
+  fonts_unload_custom_font(fontMoonPhases);
 }
 
 void pbl_main(void *params) {

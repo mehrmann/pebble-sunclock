@@ -11,15 +11,20 @@
         {
         "type": "font",
         "characterRegex": "[:0-9]",
-        "defName": "FONT_ROBOTO_CONDENSED_18",
-        "file": "fonts/Roboto-Condensed.ttf"
+        "defName": "FONT_SUNCLOCK_30",
+        "file": "fonts/Mecha_Condensed_Bold.ttf"
         },
-
         {
         "type": "font",
         "characterRegex": "[:0-9]",
-        "defName": "FONT_ROBOTO_CONDENSED_30",
-        "file": "fonts/Roboto-Condensed.ttf"
+        "defName": "FONT_SUNCLOCK_16",
+        "file": "fonts/Mecha_Condensed_Bold.ttf"
+        },
+        {
+        "type": "font",
+        "characterRegex": "[a-z]",
+        "defName": "FONT_MOON_PHASES_30",
+        "file": "fonts/moon_phases.ttf"
         },
         {
                 "type":"png-trans",
