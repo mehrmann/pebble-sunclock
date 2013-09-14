@@ -1,4 +1,4 @@
 //NOTE: longitude is positive for East and negative for West
-#define LATITUDE    37.3231
-#define LONGITUDE -122.0311
+#define LATITUDE    38.000
+#define LONGITUDE -122.000
 #define TIMEZONE -8;
