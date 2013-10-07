@@ -22,7 +22,9 @@ TextLayer text_sunset_layer;
 Layer graphics_sun_layer;
 
 RotBmpPairContainer bitmap_hour_container;
-RotBmpPairContainer watchface_container;
+
+BmpContainer face_white;
+BmpContainer face_black;
 
 GPathInfo sun_path_info = {
   5,
@@ -207,10 +209,15 @@ void handle_init(AppContextRef ctx) {
   graphics_sun_layer.update_proc = &graphics_sun_layer_update_callback;
   layer_add_child(&window.layer, &graphics_sun_layer);
 
-  rotbmp_pair_init_container(RESOURCE_ID_IMAGE_WATCHFACE_WHITE, RESOURCE_ID_IMAGE_WATCHFACE_BLACK, &watchface_container);
-  layer_add_child(&graphics_sun_layer, &watchface_container.layer.layer);
-  watchface_container.layer.layer.frame.origin.x = (144/2) - (watchface_container.layer.layer.frame.size.w/2);
-  watchface_container.layer.layer.frame.origin.y = (168/2) - (watchface_container.layer.layer.frame.size.h/2);
+  bmp_init_container(RESOURCE_ID_IMAGE_FACE_BLACK, &face_black);
+  bitmap_layer_set_background_color(&face_black.layer, GColorClear);
+  bitmap_layer_set_compositing_mode(&face_black.layer, GCompOpAnd);
+  layer_add_child(&graphics_sun_layer, &face_black.layer.layer);
+
+  bmp_init_container(RESOURCE_ID_IMAGE_FACE_WHITE, &face_white);
+  bitmap_layer_set_background_color(&face_white.layer, GColorClear);
+  bitmap_layer_set_compositing_mode(&face_white.layer, GCompOpSet);
+  layer_add_child(&face_black.layer.layer, &face_white.layer.layer);
 
   rotbmp_pair_init_container(RESOURCE_ID_IMAGE_HOUR_WHITE, RESOURCE_ID_IMAGE_HOUR_BLACK, &bitmap_hour_container);
   rotbmp_pair_layer_set_src_ic(&bitmap_hour_container.layer, GPoint(6,56));
@@ -248,7 +255,8 @@ void handle_init(AppContextRef ctx) {
 void handle_deinit(AppContextRef ctx) {
   (void)ctx;
 
-  rotbmp_pair_deinit_container(&watchface_container);
+  bmp_deinit_container(&face_white);
+  bmp_deinit_container(&face_black);
   rotbmp_pair_deinit_container(&bitmap_hour_container);
 
   fonts_unload_custom_font(fontSmall);

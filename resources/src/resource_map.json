@@ -32,9 +32,14 @@
                 "file":"images/hour.png"
         },
         {
-                "type":"png-trans",
-                "defName":"IMAGE_WATCHFACE",
-                "file":"images/watchface.png"
+                "type":"png",
+                "defName":"IMAGE_FACE_BLACK",
+                "file":"images/watchface_black.png"
+        },
+        {
+                "type":"png",
+                "defName":"IMAGE_FACE_WHITE",
+                "file":"images/watchface_white.png"
         }
 
  ]
